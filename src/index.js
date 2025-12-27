@@ -3,6 +3,7 @@ import cors from 'cors';
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { PostModel } from "./models/Posts.js";
+import { userRouter } from "./routes/auth.js";
 dotenv.config();
 
 const app = express();
@@ -13,7 +14,7 @@ app.use(cors());
 
 mongoose.connect(process.env.MONGO_URI)
 
-
+app.use("/auth", userRouter)
 
 const PORT = 3001;
 
