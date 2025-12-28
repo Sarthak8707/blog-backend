@@ -1,23 +1,11 @@
 import express from 'express';
 import { UserModel } from '../models/Users.js';
 import bcrypt from 'bcrypt'
+import { register } from '../controllers/auth.controller.js';
 
 const router = express.Router();
 
-router.post("/register", async (req, res) => {
-    const {username, password, email, role} = req.body;
-    const user = await UserModel.findOne({username});
-    if(user){
-        return res.json({msg: "Username already exists!"})
-    }
-
-    const hashedPassword =await bcrypt.hash(password, 10);
-
-    const newUser = new UserModel({username, password: hashedPassword, email, role});
-    await newUser.save();
-    res.json({msg: "New User created"})
-
-})
+router.post("/register", register)
 
 router.post("/login", async (req, res) => {
     const {username, password} = req.body;
