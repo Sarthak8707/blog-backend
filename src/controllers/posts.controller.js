@@ -1,4 +1,4 @@
-import { listAllPosts } from "../services/posts.service.js";
+import { createPost, listAllPosts } from "../services/posts.service.js";
 
 
 export const listPosts = async (req, res, next) => {
@@ -11,9 +11,14 @@ export const listPosts = async (req, res, next) => {
     }
 }
 
-export const create = async (req, res) => {
+export const create = async (req, res, next) => {
     try{
-        const post = await createPost(req.body);
+
+        const authorId = req.body.id;
+
+        const title = req.body.title;
+        const content = req.body.content;
+        const post = await createPost({authorId, title, content});
         res.status(201).json(post);
     }
     catch(err){
