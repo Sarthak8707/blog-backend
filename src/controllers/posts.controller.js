@@ -14,7 +14,7 @@ export const listPosts = async (req, res, next) => {
 export const create = async (req, res, next) => {
     try{
 
-        const authorId = req.body.id;
+        const authorId = req.body.authorId;
 
         const title = req.body.title;
         const content = req.body.content;
