@@ -16,3 +16,7 @@ export const createPost = async ({authorId, title, content}) => {
 
 
 }
+export const getPostData = async (id) => {
+    const data = await PostModel.findOne({_id: id});
+    return data;
+}

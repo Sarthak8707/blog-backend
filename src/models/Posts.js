@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const PostSchema = new mongoose.Schema({
     title: {type: String},
     content: {type: String},
-    authorId: {type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
+    authorId: {type: mongoose.Schema.Types.ObjectId, ref: "users", required: true},
     tags: {type: [String]},
     likesCount: {type: Number},
     isPublished: {type: Boolean},

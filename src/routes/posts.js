@@ -1,5 +1,5 @@
 import express from "express"
-import { create, listPosts } from "../controllers/posts.controller.js";
+import { create, getPost, listPosts } from "../controllers/posts.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
@@ -8,7 +8,10 @@ const router = express.Router();
 router.get("/", listPosts);
 
 // Create a post
-router.post("/", create);
+router.post("/", authMiddleware , create);
+
+// Get a post 
+router.get("/:id", getPost);
 
 
 export {router as postsRouter}

@@ -1,4 +1,4 @@
-import { registerUser } from "../services/auth.service.js";
+import { getUserInfo, loginUser, registerUser } from "../services/auth.service.js";
 
 export const register = async (req, res, next) => {
     //controller should only pass request data
@@ -14,5 +14,26 @@ export const register = async (req, res, next) => {
 }
 
 export const login = async (req, res, next) => {
-    //
+    
+    try{
+        const {username, password} = req.body;
+        const result = await loginUser({username, password});
+        const token = result.token;
+        const user = result.user;
+        return res.status(200).json({token, user});
+    }
+    catch(err){
+        next(err);
+    }
+}
+
+export const userInfo = async (req,res, next) => {
+    try{
+        const userId = req.user.id;
+        const result = await getUserInfo({userId});
+        return res.status(200).json(result);
+    }
+    catch(err){
+        next(err);
+    }
 }
