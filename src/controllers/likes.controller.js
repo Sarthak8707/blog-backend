@@ -1,4 +1,4 @@
-import { likeByUser } from "../services/likes.service.js";
+import { deleteLikeByUser, likeByUser } from "../services/likes.service.js";
 
 export const postLike = async (req, res, next) => {
     try{
