@@ -6,6 +6,7 @@ export const listPosts = async (req, res, next) => {
         const data = await listAllPosts({
   page: Number(req.query.page),
   limit: Number(req.query.limit),
+  tag: req.query.tag
 });
         res.status(200).json(data)
     }
@@ -15,13 +16,12 @@ export const listPosts = async (req, res, next) => {
 }
 
 export const create = async (req, res, next) => {
-
-     try{
+    try{
 
         const authorId = req.user.id;
 
-        const title = i+" th title";
-        const content = i+" th content";
+        const title = req.body.title;
+        const content = req.body.content;
         const post = await createPost({authorId, title, content});
         res.status(201).json(post);
     }
@@ -29,7 +29,6 @@ export const create = async (req, res, next) => {
         next(err);
     }
     
-   
 }
 
 export const getPost = async (req, res, next) => {

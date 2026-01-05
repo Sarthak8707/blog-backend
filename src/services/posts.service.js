@@ -1,13 +1,32 @@
 import { PostModel } from "../models/Posts.js"
 import { AppError } from "../utils/appError.js";
 
-export const listAllPosts = async ({page, limit}) => {
-    if(!page) page=1;
-    if(!limit) limit=10;
-    const skip = (page-1)*limit;
-    const posts = await PostModel.find().skip(skip).limit(limit) ;
-    return posts;
-}
+export const listAllPosts = async ({ page, limit, tag }) => {
+  if (!page) page = 1;
+  if (!limit) limit = 10;
+
+  const skip = (page - 1) * limit;
+
+  const filter = {};
+
+  console.log(tag)
+  if (tag!==undefined) {
+    filter.tags = tag;
+    const posts = await PostModel.find(filter)
+    .sort({createdAt: -1})
+    .skip(skip)
+    .limit(limit);
+
+  return posts;
+  }
+
+  const posts = await PostModel.find()
+    .skip(skip)
+    .limit(limit);
+
+  return posts;
+};
+
 
 export const createPost = async ({authorId, title, content}) => {
     if(!title || !content){
