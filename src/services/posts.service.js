@@ -1,8 +1,11 @@
 import { PostModel } from "../models/Posts.js"
 import { AppError } from "../utils/appError.js";
 
-export const listAllPosts = async () => {
-    const posts = await PostModel.find();
+export const listAllPosts = async ({page, limit}) => {
+    if(!page) page=1;
+    if(!limit) limit=10;
+    const skip = (page-1)*limit;
+    const posts = await PostModel.find().skip(skip).limit(limit) ;
     return posts;
 }
 

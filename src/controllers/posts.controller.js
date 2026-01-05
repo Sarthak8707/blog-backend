@@ -3,7 +3,10 @@ import { createPost, getPostData, listAllPosts, updatePost, deletePost } from ".
 
 export const listPosts = async (req, res, next) => {
     try{
-        const data = await listAllPosts();
+        const data = await listAllPosts({
+  page: Number(req.query.page),
+  limit: Number(req.query.limit),
+});
         res.status(200).json(data)
     }
     catch(err){
@@ -12,18 +15,21 @@ export const listPosts = async (req, res, next) => {
 }
 
 export const create = async (req, res, next) => {
-    try{
+
+     try{
 
         const authorId = req.user.id;
 
-        const title = req.body.title;
-        const content = req.body.content;
+        const title = i+" th title";
+        const content = i+" th content";
         const post = await createPost({authorId, title, content});
         res.status(201).json(post);
     }
     catch(err){
         next(err);
     }
+    
+   
 }
 
 export const getPost = async (req, res, next) => {
