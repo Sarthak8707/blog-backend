@@ -4,8 +4,8 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router=express.Router();
 
-router.get("posts/:id/comments", getComments);
-router.post("posts/:id/comments",authMiddleware, createComments);
+router.get("/posts/:id/comments", getComments);
+router.post("/posts/:id/comments",authMiddleware, createComments);
 router.delete("/comments/:id",authMiddleware, deleteComment);
 
 export {router as commentsRouter}

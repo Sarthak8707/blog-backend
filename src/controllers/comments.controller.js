@@ -21,7 +21,7 @@ export const createComments = async (req, res, next) => {
         res.status(201).json(data);
     }
     catch(error){
-        next(err);
+        next(error);
     }
 
 }

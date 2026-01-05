@@ -6,6 +6,7 @@ import { PostModel } from "./models/Posts.js";
 import { userRouter } from "./routes/auth.js";
 import { postsRouter } from "./routes/posts.js";
 import { commentsRouter } from "./routes/comments.js";
+import { likesRouter } from "./routes/likes.js";
 
 dotenv.config();
 
@@ -22,6 +23,8 @@ app.use("/auth", userRouter)
 app.use("/posts", postsRouter);
 
 app.use("/", commentsRouter);
+
+app.use("/like", likesRouter);
 
 const PORT = 3001;
 

@@ -5,3 +5,4 @@ const LikeSchema = new mongoose.Schema({
     userId: {type: mongoose.Schema.Types.ObjectId, ref: "users"},
     createdAt: {type: Date}
 })
+export const LikeModel = mongoose.model("likes", LikeSchema);

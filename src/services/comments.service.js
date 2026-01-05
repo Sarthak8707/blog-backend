@@ -1,8 +1,9 @@
 import { CommentModel } from "../models/Comments.js"
+import { PostModel } from "../models/Posts.js";
 import { AppError } from "../utils/appError.js";
 
 export const getCommentsOfPost = async ({postId}) => {
-    const post = await PostModel.find({_id: postId});
+    const post = await PostModel.findOne({_id: postId});
     if(!post){
         throw new AppError("Post doesn't exists", 404);
     }
@@ -35,6 +36,6 @@ export const deleteCommentOfUser = async ({commentId, userId}) => {
         throw new AppError("You are not allowed to delete this comment!", 403);
     }
     await comment.deleteOne();
-    
+
 
 }
