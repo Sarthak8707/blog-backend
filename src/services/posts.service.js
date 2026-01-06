@@ -46,7 +46,7 @@ export const getPostData = async (id) => {
     return data;
 }
 
-export const updatePost = async({userId, postId, title, content}) => {
+export const updatePost = async({userId, postId, title, content, role}) => {
     const post = await PostModel.findById(postId);
     if(!post){
         throw new AppError("Post not found", 404);
