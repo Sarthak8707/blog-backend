@@ -47,6 +47,7 @@ export const update = async (req, res, next) => {
         const postId = req.params.id;
         const {title, content} = req.body;
         const userId = req.user.id;
+        // const role = req.user.role;
         const updatedPost = await updatePost({postId, userId, title, content});
         return res.status(200).json(updatedPost);
     }

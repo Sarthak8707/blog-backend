@@ -1,3 +1,5 @@
+import { CommentModel } from "../models/Comments.js";
+import { LikeModel } from "../models/Likes.js";
 import { PostModel } from "../models/Posts.js"
 import { AppError } from "../utils/appError.js";
 
@@ -51,7 +53,7 @@ export const updatePost = async({userId, postId, title, content}) => {
     }
 
    // console.log(post.authorId)
-    if(post.authorId.toString() != userId){
+    if(post.authorId.toString() != userId && role != "admin"){
         throw new AppError("You are not allowed to update this post", 403);
     }
     if(title !== undefined) post.title = title;
@@ -72,6 +74,11 @@ export const deletePost = async ({role, postId}) => {
     if(!post){
         throw new AppError("Post does not exist", 404);
     }
+
+    await LikeModel.deleteMany({postId});
+    await CommentModel.deleteMany({postId});
+
+
     await post.deleteOne();
     return post;
 
