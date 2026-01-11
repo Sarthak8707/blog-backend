@@ -1,5 +1,7 @@
 import express from "express";
 import cors from 'cors';
+
+import { createClient } from "redis";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { PostModel } from "./models/Posts.js";
@@ -15,9 +17,25 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// mongoose connection
 
 mongoose.connect(process.env.MONGO_URI)
 
+// redis connection
+
+
+export const redis = createClient({
+  url: "redis://localhost:6379",
+});
+
+redis.on("error", (err) => {
+  console.error("Redis error:", err);
+});
+
+await redis.connect();
+
+
+// routers
 app.use("/auth", userRouter)
 
 app.use("/posts", postsRouter);
