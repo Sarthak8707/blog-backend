@@ -1,3 +1,4 @@
+import { redis } from "../index.js";
 import { CommentModel } from "../models/Comments.js";
 import { LikeModel } from "../models/Likes.js";
 import { PostModel } from "../models/Posts.js"
@@ -42,7 +43,17 @@ export const createPost = async ({authorId, title, content}) => {
 }
 
 export const getPostData = async (id) => {
+    const cacheKey = `post:${id}`;
+    const cached = await redis.get(cacheKey);
+
+    // check for cache
+    if(cached) return JSON.parse(cached);
+
+    
     const data = await PostModel.findOne({_id: id});
+
+    // update cache
+    await redis.set(cacheKey, JSON.stringify(data), {EX: 300});
     return data;
 }
 
