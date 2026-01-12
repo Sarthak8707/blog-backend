@@ -6,10 +6,16 @@ import { AppError } from "../utils/appError.js";
 export const getCommentsOfPost = async ({postId}) => {
 
     // check for cache
-
-    const cacheKey = `comments:{postId}`;
+    const cacheKey = `comments:${postId}`;
+    try{
+    
     const cachedValue = await redis.get(cacheKey);
-    if(cacheKey) return JSON.parse(cachedValue);
+    if(cachedValue) return JSON.parse(cachedValue);
+    
+    }
+    catch(err){
+        console.log("Redis error:", err);
+    }
 
     // get from db
 
@@ -18,13 +24,24 @@ export const getCommentsOfPost = async ({postId}) => {
         throw new AppError("Post doesn't exists", 404);
     }
     const result = await CommentModel.find({postId});
+
+    // update cache
+    
+    try{
+        await redis.set(cacheKey, JSON.stringify(result), {EX: 60})
+    }
+    catch(err){
+        console.log("Redis error:", err);
+    }
+
+
     return result;
 }
 
 export const createAComment = async ({userId, content, postId}) => {
 
     // add to db
-    
+
     const post = await PostModel.findOne({_id: postId});
     if(!post){
         throw new AppError("Post doesn't exist", 404);
