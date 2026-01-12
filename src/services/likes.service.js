@@ -44,10 +44,10 @@ export const likeByUser = async ({ postId, userId }) => {
 
     // Update cache
     let likes = 0;
-    const cachedData = await redis.get(`post:likes:${postId}`);
+    const cachedData = await redis.get(`likes:${postId}`);
     if(cachedData) likes = cachedData
     likes++;
-    await redis.set(`post:likes:${postId}`, likes, {EX: 60});
+    await redis.set(`likes:${postId}`, likes, {EX: 60});
 
   } catch (err) {
     //  Rollback 
@@ -69,8 +69,8 @@ export const deleteLikeByUser = async ({postId, userId}) => {
     await like.deleteOne();
 
     // update cache
-    let likes = await redis.get(`post:likes:${postId}`);
+    let likes = await redis.get(`likes:${postId}`);
     likes--;
-    await redis.set(`post:likes:${postId}`, likes, {EX: 60})
+    await redis.set(`likes:${postId}`, likes, {EX: 60})
 
 }
