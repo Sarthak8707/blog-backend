@@ -54,14 +54,17 @@ export const createPost = async ({authorId, title, content, tags}) => {
     await newPost.save();
 
     // invalidate cache
-    
+
     for(const tag in tags){
         const keys = await redis.keys(`posts:*:*:${tag}`);
         if(keys.length){
             await redis.del(keys)
         }
     }
-
+    
+    // add cache
+    
+    await redis.set(`post:${newPost._id}`, JSON.stringify(newPost), {EX: 60});
 
     return newPost;
 
@@ -83,6 +86,9 @@ export const getPostData = async (id) => {
     return data;
 }
 
+
+
+
 export const updatePost = async({userId, postId, title, content, role}) => {
     const post = await PostModel.findById(postId);
     if(!post){
@@ -95,8 +101,12 @@ export const updatePost = async({userId, postId, title, content, role}) => {
     }
     if(title !== undefined) post.title = title;
     if(content !== undefined) post.content = content;
-
+    
     await post.save();
+
+    // update cache
+    await redis.set(`posts:${postId}`, JSON.stringify(post), {EX: 30});
+    
 
     return post;
 
@@ -117,6 +127,10 @@ export const deletePost = async ({role, postId}) => {
 
 
     await post.deleteOne();
+    // invalidate cache
+
+    const keys = await redis.keys(`post:${postId}`);
+    await redis.del(keys);
     return post;
 
 }
