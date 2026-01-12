@@ -5,6 +5,17 @@ import { PostModel } from "../models/Posts.js"
 import { AppError } from "../utils/appError.js";
 
 export const listAllPosts = async ({ page, limit, tag }) => {
+
+    // check for cache 
+    const cacheKey = `posts:${page}:${limit}:${tag}`;
+    const cachedValue = await redis.get(cacheKey);
+    if(cachedValue) {
+       // console.log(cachedValue)
+       return JSON.parse(cachedValue)
+    };
+
+    // return from db
+
   if (!page) page = 1;
   if (!limit) limit = 10;
 
@@ -12,7 +23,7 @@ export const listAllPosts = async ({ page, limit, tag }) => {
 
   const filter = {};
 
-  console.log(tag)
+ // console.log(tag)
   if (tag!==undefined) {
     filter.tags = tag;
     const posts = await PostModel.find(filter)
@@ -20,6 +31,8 @@ export const listAllPosts = async ({ page, limit, tag }) => {
     .skip(skip)
     .limit(limit);
 
+    //set cache
+    await redis.set(cacheKey, JSON.stringify(posts), {EX: 30});
   return posts;
   }
 
@@ -27,16 +40,29 @@ export const listAllPosts = async ({ page, limit, tag }) => {
     .skip(skip)
     .limit(limit);
 
+    // set cache
+    await redis.set(cacheKey, JSON.stringify(posts), {EX: 30});
   return posts;
 };
 
 
-export const createPost = async ({authorId, title, content}) => {
+export const createPost = async ({authorId, title, content, tags}) => {
     if(!title || !content){
         throw new AppError("Title and Post are required", 400);
     }
     const newPost = new PostModel({authorId, title, content});
     await newPost.save();
+
+    // invalidate cache
+    
+    for(const tag in tags){
+        const keys = await redis.keys(`posts:*:*:${tag}`);
+        if(keys.length){
+            await redis.del(keys)
+        }
+    }
+
+
     return newPost;
 
 
@@ -53,7 +79,7 @@ export const getPostData = async (id) => {
     const data = await PostModel.findOne({_id: id});
 
     // update cache
-    await redis.set(cacheKey, JSON.stringify(data), {EX: 300});
+    await redis.set(cacheKey, JSON.stringify(data), {EX: 30});
     return data;
 }
 

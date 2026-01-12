@@ -22,7 +22,9 @@ export const create = async (req, res, next) => {
 
         const title = req.body.title;
         const content = req.body.content;
-        const post = await createPost({authorId, title, content});
+        const tags = req.body.tags;
+        const post = await createPost({authorId, title, content, tags});
+       
         res.status(201).json(post);
     }
     catch(err){
