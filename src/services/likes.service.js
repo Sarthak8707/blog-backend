@@ -1,3 +1,4 @@
+import { redis } from "../index.js";
 import { LikeModel } from "../models/Likes.js";
 import { PostModel } from "../models/Posts.js"
 import { AppError } from "../utils/appError.js";
@@ -7,13 +8,13 @@ export const likeByUser = async ({ postId, userId }) => {
   session.startTransaction();
 
   try {
-    // 1️⃣ Fetch post inside transaction
+    //  Fetch post inside transaction
     const post = await PostModel.findById(postId).session(session);
     if (!post) {
       throw new AppError("Post doesn't exist", 404);
     }
 
-    // 2️⃣ Check duplicate like INSIDE transaction
+    //  Check duplicate like INSIDE transaction
     const existingLike = await LikeModel.findOne(
       { postId, userId },
       null,
@@ -24,24 +25,32 @@ export const likeByUser = async ({ postId, userId }) => {
       throw new AppError("You can't like twice", 409);
     }
 
-    // 3️⃣ Create like
+    //  Create like
     await LikeModel.create(
       [{ postId, userId }],
       { session }
     );
 
-    // 4️⃣ Increment counter atomically
+    //  Increment counter atomically
     await PostModel.updateOne(
       { _id: postId },
       { $inc: { likesCount: 1 } },
       { session }
     );
 
-    // 5️⃣ Commit
+    //  Commit
     await session.commitTransaction();
     session.endSession();
+
+    // Update cache
+    let likes = 0;
+    const cachedData = await redis.get(`post:likes:${postId}`);
+    if(cachedData) likes = cachedData
+    likes++;
+    await redis.set(`post:likes:${postId}`, likes, {EX: 60});
+
   } catch (err) {
-    // 6️⃣ Rollback EVERYTHING
+    //  Rollback 
     await session.abortTransaction();
     session.endSession();
     throw err;
@@ -58,4 +67,10 @@ export const deleteLikeByUser = async ({postId, userId}) => {
         throw new AppError("you cant unlike twice", 409);
     }
     await like.deleteOne();
+
+    // update cache
+    let likes = await redis.get(`post:likes:${postId}`);
+    likes--;
+    await redis.set(`post:likes:${postId}`, likes, {EX: 60})
+
 }
