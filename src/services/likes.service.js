@@ -44,10 +44,15 @@ export const likeByUser = async ({ postId, userId }) => {
 
     // Update cache
     let likes = 0;
-    const cachedData = await redis.get(`likes:${postId}`);
+    try{
+      const cachedData = await redis.get(`likes:${postId}`);
     if(cachedData) likes = cachedData
     likes++;
     await redis.set(`likes:${postId}`, likes, {EX: 60});
+    }
+    catch(err){
+      console.log("Redis error:", err);
+    }
 
   } catch (err) {
     //  Rollback 
@@ -64,13 +69,18 @@ export const deleteLikeByUser = async ({postId, userId}) => {
     }
     const like = await LikeModel.findOne({userId, postId});
     if(!like){
-        throw new AppError("you cant unlike twice", 409);
+        throw new AppError("You cant unlike twice", 409);
     }
     await like.deleteOne();
 
     // update cache
-    let likes = await redis.get(`likes:${postId}`);
+    try{
+      let likes = await redis.get(`likes:${postId}`);
     likes--;
     await redis.set(`likes:${postId}`, likes, {EX: 60})
+    }
+    catch(err){
+      console.log(err);
+    }
 
 }

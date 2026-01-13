@@ -4,18 +4,10 @@ import { LikeModel } from "../models/Likes.js";
 import { PostModel } from "../models/Posts.js"
 import { AppError } from "../utils/appError.js";
 
-export const listAllPosts = async ({ page, limit, tag }) => {
 
-    // check for cache 
-    const cacheKey = `posts:${page}:${limit}:${tag}`;
-    const cachedValue = await redis.get(cacheKey);
-    if(cachedValue) {
-       // console.log(cachedValue)
-       return JSON.parse(cachedValue)
-    };
+const getFromDBandCache = async ({page, limit, tag, lockKey}) => {
 
-    // return from db
-
+    
   if (!page) page = 1;
   if (!limit) limit = 10;
 
@@ -23,7 +15,7 @@ export const listAllPosts = async ({ page, limit, tag }) => {
 
   const filter = {};
 
- // console.log(tag)
+ 
   if (tag!==undefined) {
     filter.tags = tag;
     const posts = await PostModel.find(filter)
@@ -32,7 +24,14 @@ export const listAllPosts = async ({ page, limit, tag }) => {
     .limit(limit);
 
     //set cache
-    await redis.set(cacheKey, JSON.stringify(posts), {EX: 30});
+    try{
+        await redis.set(cacheKey, JSON.stringify(posts), {EX: 30});
+        // release lock
+        if(lockKey) await redis.del(lockKey);
+    }
+    catch(err){
+        console.log("Redis error:", err);
+    }
   return posts;
   }
 
@@ -41,8 +40,61 @@ export const listAllPosts = async ({ page, limit, tag }) => {
     .limit(limit);
 
     // set cache
-    await redis.set(cacheKey, JSON.stringify(posts), {EX: 30});
+    try{
+        await redis.set(cacheKey, JSON.stringify(posts), {EX: 30});
+        // release lock
+        if(lockKey) await redis.del(lockKey)
+    }
+    catch(err){
+        console.log("Redis error:", err);
+    }
   return posts;
+}
+
+
+export const listAllPosts = async ({ page, limit, tag }) => {
+
+    // check for cache 
+    const cacheKey = `posts:${page}:${limit}:${tag}`;
+    
+    try{
+        const cachedValue = await redis.get(cacheKey);
+    if(cachedValue) {
+       return JSON.parse(cachedValue)
+    };
+    }
+    catch(err){
+        console.log("Redis error:", err);
+    }
+
+    const lockKey = `lockKey:${cacheKey}`;
+    const lock = await redis.set(lockKey, "1", {NX: true, EX: 10});
+
+    // cache stampede prevention
+
+    if(lock){
+        // return from db and cache
+       return getFromDBandCache({page, limit, tag, lockKey});
+    }
+    // wait for cache
+    await newPromise (r => setTimeout(r, 100));
+
+    // retry 
+    try{
+        const cachedValue = await redis.get(cacheKey);
+    if(cachedValue) {
+       return JSON.parse(cachedValue)
+    };
+    }
+    catch(err){
+        console.log("Redis error:", err);
+    }
+
+    // if still not got data then return from db
+
+    return getFromDBandCache({page, limit, tag});
+
+
 };
 
 
@@ -61,13 +113,6 @@ export const createPost = async ({authorId, title, content, tags}) => {
             await redis.del(keys)
         }
     }
-    
-    // add cache
-    
-    await redis.set(`post:${newPost._id}`, JSON.stringify(newPost), {EX: 60});
-
-    return newPost;
-
 
 }
 
@@ -77,16 +122,18 @@ export const getPostData = async (id) => {
 
     // check for cache
     if(cached) return JSON.parse(cached);
-
     
     const data = await PostModel.findOne({_id: id});
 
     // update cache
-    await redis.set(cacheKey, JSON.stringify(data), {EX: 30});
+    try{
+        await redis.set(cacheKey, JSON.stringify(data), {EX: 30});
+    }
+    catch(err){
+        console.log("Redis error:", err)
+    }
     return data;
 }
-
-
 
 
 export const updatePost = async({userId, postId, title, content, role}) => {
@@ -104,9 +151,13 @@ export const updatePost = async({userId, postId, title, content, role}) => {
     
     await post.save();
 
-    // update cache
-    await redis.set(`posts:${postId}`, JSON.stringify(post), {EX: 30});
-    
+    // invalidate cache
+    try{
+        await redis.del(`posts:${postId}`);
+    }
+    catch(err){
+        console.log("Redis error:", err);
+    }
 
     return post;
 
@@ -129,8 +180,13 @@ export const deletePost = async ({role, postId}) => {
     await post.deleteOne();
     // invalidate cache
 
-    const keys = await redis.keys(`post:${postId}`);
+    try{
+        const keys = await redis.keys(`post:${postId}`);
     await redis.del(keys);
+    }
+    catch(err){
+        console.log("Redis error:", err);
+    }
     return post;
 
 }

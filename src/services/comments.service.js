@@ -11,7 +11,7 @@ export const getCommentsOfPost = async ({postId}) => {
     
     const cachedValue = await redis.get(cacheKey);
     if(cachedValue) return JSON.parse(cachedValue);
-    
+
     }
     catch(err){
         console.log("Redis error:", err);
@@ -28,7 +28,7 @@ export const getCommentsOfPost = async ({postId}) => {
     // update cache
     
     try{
-        await redis.set(cacheKey, JSON.stringify(result), {EX: 60})
+        await redis.setEx(cacheKey, 60, JSON.stringify(result));
     }
     catch(err){
         console.log("Redis error:", err);
@@ -53,9 +53,16 @@ export const createAComment = async ({userId, content, postId}) => {
     const newComment = new CommentModel({userId, content, postId});
     await newComment.save();
 
-    // update cache
+    // invalidate cache
 
-    await redis.rPush(`comments:${postId}`, JSON.stringify(newComment));
+    try{
+        await redis.del(`comments:${postId}`);
+    }
+    catch(err){
+        console.log("Redis error:", err);
+    }
+
+    
     return newComment;
 
 }
@@ -76,7 +83,11 @@ export const deleteCommentOfUser = async ({commentId, userId}) => {
 
     // invalidate cache
 
-    const keys = await redis.keys(`comments:${postId}`);
-    await redis.del(keys);
+    try{
+      await redis.del(`comments:${postId}`);
+    }
+    catch(err){
+
+    }
 
 }
