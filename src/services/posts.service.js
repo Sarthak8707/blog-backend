@@ -25,7 +25,12 @@ const getFromDBandCache = async ({page, limit, tag, lockKey}) => {
 
     //set cache
     try{
-        await redis.set(cacheKey, JSON.stringify(posts), {EX: 30});
+        
+        await redis.incr(`${cacheKey}:views`);
+        await redis.expire(`${cacheKey}:views`, 300);
+        const views = await redis.get(`${cacheKey}:views`);
+        // partial caching
+        if(views >= 10) await redis.set(cacheKey, JSON.stringify(posts), {EX: 30});
         // release lock
         if(lockKey) await redis.del(lockKey);
     }
